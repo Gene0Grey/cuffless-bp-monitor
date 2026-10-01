@@ -10,7 +10,7 @@ This repository holds the carrier PCB (KiCad 9), the ESP32 firmware, and the
 
 > **Not a medical device.** For research and education only; not validated for clinical use.
 
-![3D view of the carrier board](hardware/docs/3d.png)
+![The assembled carrier board](hardware/docs/render-front-left.png)
 
 ## How it works
 
@@ -19,6 +19,8 @@ reaches a peripheral site a short time later, where a PPG sensor sees it. That d
 PTT. Higher blood pressure stiffens the arteries, the pulse travels faster, and PTT gets
 shorter:
 
+![ECG R-peak to PPG pulse foot: the pulse transit time](docs/ptt-timing.svg)
+
 ```
 BP ≈ a · (1 / PTT²) + b
 ```
@@ -26,6 +28,13 @@ BP ≈ a · (1 / PTT²) + b
 `a` and `b` are fitted per person against a reference cuff. Using a proximal site
 (earlobe, short PTT) and distal sites (fingertips, longer PTT) gives several transit times
 per beat, for cross-checking and rejecting motion artefacts.
+
+## System overview
+
+![System block diagram](docs/system-diagram.svg)
+
+The ECG is analog, so it goes straight to an ADC1 pin and keeps working with Wi-Fi on.
+All four MAX30102 sensors share I²C address 0x57, so the TCA9548A connects one at a time.
 
 ## Hardware
 
@@ -43,6 +52,39 @@ The four PPG sockets sit in one straight row, PPG1–PPG4 left to right on mux c
 The bottom copper, seen from the component side:
 
 ![Bottom copper, seen from the top](hardware/docs/copper.png)
+
+### Renders
+
+<table>
+  <tr>
+    <td><img src="hardware/docs/render-front-right.png" alt="Assembled board, front right"></td>
+    <td><img src="hardware/docs/render-back.png" alt="Assembled board, from the back"></td>
+  </tr>
+  <tr>
+    <td align="center">Assembled, front right</td>
+    <td align="center">Assembled, from the back: USB, 5V IN and the ECG jack</td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="hardware/docs/render-sensor-row.png" alt="The PPG sensor row"></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">The four PPG sockets, PPG1&ndash;PPG4 on mux channels 0&ndash;3</td>
+  </tr>
+  <tr>
+    <td><img src="hardware/docs/bare-top.png" alt="Bare board, top"></td>
+    <td><img src="hardware/docs/bare-bottom.png" alt="Bare board, bottom"></td>
+  </tr>
+  <tr>
+    <td align="center">Bare board, top: silkscreen and pin names</td>
+    <td align="center">Bare board, bottom: the single copper layer</td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="hardware/docs/bare-iso.png" alt="Bare board, angled view"></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">Bare board before the modules go on</td>
+  </tr>
+</table>
 
 ### Parts
 
@@ -79,6 +121,12 @@ For portable use: a 3.7 V LiPo (1250 mAh) and an XL6009 boost converter set to 5
 
 All MAX30102 VIN pins go to 3V3 and all grounds are common. Electrodes: RA on the right
 collarbone, LA on the left collarbone, RL (reference) on the left lower rib.
+
+### Schematic
+
+[![Schematic](hardware/docs/schematic.png)](hardware/docs/schematic.pdf)
+
+Click the image for the PDF.
 
 ### Assembly notes
 

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="410" viewBox="0 0 960 410" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#334155"/></marker>
+  </defs>
+  <rect width="960" height="410" fill="#ffffff"/>
+
+  <!-- row labels -->
+  <g fill="#0f172a" font-size="14" font-weight="600">
+    <text x="24" y="96">ECG</text>
+    <text x="24" y="176">PPG · earlobe</text>
+    <text x="24" y="278">PPG · fingertip</text>
+  </g>
+  <g fill="#64748b" font-size="12">
+    <text x="24" y="114">AD8232</text>
+    <text x="24" y="194">MAX30102</text>
+    <text x="24" y="296">MAX30102</text>
+  </g>
+
+  <!-- R-peak and pulse-foot markers -->
+  <g stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="5 4">
+    <line x1="290" y1="36" x2="290" y2="336"/>
+    <line x1="370" y1="140" x2="370" y2="215"/>
+    <line x1="430" y1="240" x2="430" y2="336"/>
+  </g>
+  <text x="290" y="28" text-anchor="middle" fill="#334155" font-size="12">R-peak (t = 0)</text>
+
+  <!-- waveforms -->
+  <path fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linejoin="round"
+        d="M180 100 H212 Q232 88 252 100 H272 L280 108 L290 40 L300 118 L308 100 H352 Q387 78 422 100
+           H592 Q612 88 632 100 H652 L660 108 L670 40 L680 118 L688 100 H732 Q767 78 802 100 H940"/>
+  <path fill="none" stroke="#0891b2" stroke-width="2.2"
+        d="M180 199 C260 203 330 205 370 205 C388 203 398 152 422 150 C446 148 466 172 490 176
+           C504 178 510 170 524 172 C584 180 690 201 750 205 C768 203 778 152 802 150
+           C826 148 846 172 870 176 C884 178 890 170 904 172 C920 174 932 176 940 177"/>
+  <path fill="none" stroke="#2563eb" stroke-width="2.2"
+        d="M180 296 C300 302 380 305 430 305 C448 303 458 252 482 250 C506 248 526 272 550 276
+           C564 278 570 270 584 272 C644 280 750 301 810 305 C828 303 838 252 862 250
+           C886 248 906 268 940 274"/>
+
+  <!-- transit times -->
+  <g stroke="#334155" stroke-width="1.6" marker-start="url(#ah)" marker-end="url(#ah)">
+    <line x1="292" y1="228" x2="368" y2="228"/>
+    <line x1="292" y1="330" x2="428" y2="330"/>
+  </g>
+  <g fill="#334155" font-size="12" text-anchor="middle">
+    <text x="330" y="246">PTT (earlobe)</text>
+    <text x="360" y="348">PTT (fingertip)</text>
+  </g>
+
+  <text x="480" y="392" text-anchor="middle" fill="#0f172a" font-size="15">
+    Shorter PTT ⇒ stiffer arteries ⇒ higher BP:   BP ≈ a · (1 / PTT²) + b
+  </text>
+</svg>
