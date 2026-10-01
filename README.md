@@ -10,7 +10,7 @@ This repository holds the carrier PCB (KiCad 9), the ESP32 firmware, and the
 
 > **Not a medical device.** For research and education only; not validated for clinical use.
 
-![The assembled carrier board](hardware/docs/render-front-left.png)
+![The assembled carrier board](docs/images/board.png)
 
 ## How it works
 
@@ -19,7 +19,7 @@ reaches a peripheral site a short time later, where a PPG sensor sees it. That d
 PTT. Higher blood pressure stiffens the arteries, the pulse travels faster, and PTT gets
 shorter:
 
-![ECG R-peak to PPG pulse foot: the pulse transit time](docs/ptt-timing.svg)
+![ECG R-peak to PPG pulse foot: the pulse transit time](docs/images/ptt-timing.svg)
 
 ```
 BP ≈ a · (1 / PTT²) + b
@@ -31,7 +31,7 @@ per beat, for cross-checking and rejecting motion artefacts.
 
 ## System overview
 
-![System block diagram](docs/system-diagram.svg)
+![System block diagram](docs/images/system-diagram.svg)
 
 The ECG is analog, so it goes straight to an ADC1 pin and keeps working with Wi-Fi on.
 All four MAX30102 sensors share I²C address 0x57, so the TCA9548A connects one at a time.
@@ -51,38 +51,32 @@ All four MAX30102 sensors share I²C address 0x57, so the TCA9548A connects one 
 The four PPG sockets sit in one straight row, PPG1–PPG4 left to right on mux channels 0–3.
 The bottom copper, seen from the component side:
 
-![Bottom copper, seen from the top](hardware/docs/copper.png)
+![Bottom copper, seen from the top](docs/images/copper.png)
 
 ### Renders
 
 <table>
   <tr>
-    <td><img src="hardware/docs/render-front-right.png" alt="Assembled board, front right"></td>
-    <td><img src="hardware/docs/render-back.png" alt="Assembled board, from the back"></td>
+    <td><img src="docs/images/board-right.png" alt="Assembled board, front right"></td>
+    <td><img src="docs/images/board-back.png" alt="Assembled board, from the back"></td>
   </tr>
   <tr>
     <td align="center">Assembled, front right</td>
     <td align="center">Assembled, from the back: USB, 5V IN and the ECG jack</td>
   </tr>
   <tr>
-    <td colspan="2"><img src="hardware/docs/render-sensor-row.png" alt="The PPG sensor row"></td>
+    <td colspan="2"><img src="docs/images/board-sensor-row.png" alt="The PPG sensor row"></td>
   </tr>
   <tr>
     <td colspan="2" align="center">The four PPG sockets, PPG1&ndash;PPG4 on mux channels 0&ndash;3</td>
   </tr>
   <tr>
-    <td><img src="hardware/docs/bare-top.png" alt="Bare board, top"></td>
-    <td><img src="hardware/docs/bare-bottom.png" alt="Bare board, bottom"></td>
+    <td><img src="docs/images/bare-top.png" alt="Bare board, top"></td>
+    <td><img src="docs/images/bare-bottom.png" alt="Bare board, bottom"></td>
   </tr>
   <tr>
     <td align="center">Bare board, top: silkscreen and pin names</td>
     <td align="center">Bare board, bottom: the single copper layer</td>
-  </tr>
-  <tr>
-    <td colspan="2"><img src="hardware/docs/bare-iso.png" alt="Bare board, angled view"></td>
-  </tr>
-  <tr>
-    <td colspan="2" align="center">Bare board before the modules go on</td>
   </tr>
 </table>
 
@@ -124,7 +118,7 @@ collarbone, LA on the left collarbone, RL (reference) on the left lower rib.
 
 ### Schematic
 
-[![Schematic](hardware/docs/schematic.png)](hardware/docs/schematic.pdf)
+[![Schematic](docs/images/schematic.png)](hardware/docs/schematic.pdf)
 
 Click the image for the PDF.
 
@@ -167,7 +161,7 @@ The USB serial output is unchanged by the dashboard, so the Serial Plotter still
 
 ## Wi-Fi dashboard
 
-![The live dashboard, showing synthetic demo data](docs/dashboard.png)
+![The live dashboard, showing synthetic demo data](docs/images/dashboard.png)
 
 The ESP32 serves its own dashboard. Open it in any browser on the same network to see
 the ECG and all four PPG sites live, with:
@@ -178,6 +172,21 @@ the ECG and all four PPG sites live, with:
 - **Record**, which saves the session as a CSV file when you stop.
 
 Nothing needs installing on the viewing side, and it works without internet.
+
+<table>
+  <tr>
+    <td width="70%"><img src="docs/images/dashboard-dark.png" alt="Dashboard in dark mode"></td>
+    <td width="30%"><img src="docs/images/dashboard-mobile.png" alt="Dashboard on a phone"></td>
+  </tr>
+  <tr>
+    <td align="center">Dark mode follows the system setting</td>
+    <td align="center">On a phone</td>
+  </tr>
+</table>
+
+When a channel has a problem, the status row and the channel itself say what to fix:
+
+![Leads off, no contact, clipping and a missing sensor](docs/images/dashboard-states.png)
 
 ### Setting it up
 
@@ -221,10 +230,11 @@ compressed copy that gets compiled into the firmware.
 hardware/              KiCad 9 project (ppg-ecg-carrier)
   lib/                 footprints, symbols, logo
   fab/                 Gerbers + Excellon drill file
-  docs/                renders, schematic, etch / assembly / drill PDFs, BOM
+  docs/                schematic, etch / assembly / drill PDFs, BOM
 firmware/              ESP32 Arduino sketch
   cuffless_bp_monitor/dashboard/   Wi-Fi dashboard page
 docs/                  project report
+  images/              renders, diagrams, dashboard screenshots
 ```
 
 ## Opening the design
