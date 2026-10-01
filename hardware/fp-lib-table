@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "ppg")(type "KiCad")(uri "${KIPRJMOD}/lib/ppg.pretty")(options "")(descr "PPG carrier hand-drill footprints"))
+)

@@ -1,0 +1,14 @@
+# KiCad local state
+*-backups/
+*.kicad_prl
+fp-info-cache
+*.lck
+_autosave-*
+~*
+
+# KiCad check reports and netlist exports
+hardware/*.rpt
+hardware/net.net
+
+# third-party 3D models -- see README
+hardware/lib/3d/
