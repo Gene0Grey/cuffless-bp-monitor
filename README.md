@@ -141,7 +141,8 @@ Click the image for the PDF.
 ## Firmware
 
 [`firmware/cuffless_bp_monitor/cuffless_bp_monitor.ino`](firmware/cuffless_bp_monitor/cuffless_bp_monitor.ino)
-is an Arduino sketch for the ESP32 core. It needs nothing beyond `Wire.h`.
+is an Arduino sketch for the ESP32 core. The Wi-Fi dashboard needs two libraries,
+listed under [Wi-Fi dashboard](#wi-fi-dashboard).
 
 - Runs a 200 Hz processing loop and prints at 50 Hz over USB serial at 115200 baud. Each
   line is the ECG value followed by each detected PPG channel, tab-separated, so it works
@@ -162,8 +163,57 @@ is an Arduino sketch for the ESP32 core. It needs nothing beyond `Wire.h`.
 Tuning constants are grouped at the top of the sketch. Set `MAINS_HZ` to your local mains
 frequency.
 
-The Wi-Fi web dashboard described in the report is not in this repository yet. This
-sketch streams over USB only.
+The USB serial output is unchanged by the dashboard, so the Serial Plotter still works.
+
+## Wi-Fi dashboard
+
+![The live dashboard, showing synthetic demo data](docs/dashboard.png)
+
+The ESP32 serves its own dashboard. Open it in any browser on the same network to see
+the ECG and all four PPG sites live, with:
+
+- heart rate from the ECG R-peaks;
+- pulse transit time per site, in ms (raw, uncalibrated, and never a blood-pressure value);
+- a status for every channel: leads off, no sensor, no contact, clipping;
+- **Record**, which saves the session as a CSV file when you stop.
+
+Nothing needs installing on the viewing side, and it works without internet.
+
+### Setting it up
+
+1. In the Arduino IDE Library Manager, install **ESP Async WebServer** and **AsyncTCP**
+   (both by ESP32Async).
+2. Copy `firmware/cuffless_bp_monitor/wifi_secrets.example.h` to `wifi_secrets.h` in the
+   same folder and enter your Wi-Fi name and password. Optionally set a fixed IP address.
+   `wifi_secrets.h` is git-ignored, so the password stays on your computer.
+3. Flash the sketch and open the Serial Monitor at 115200 baud. The board prints the
+   dashboard address, for example `Dashboard: http://192.168.1.50`. It also answers at
+   `http://cuffless-bp.local` on most laptops.
+
+If the board can't join your Wi-Fi within 10 seconds, or there is no `wifi_secrets.h`, it
+opens its own hotspot instead: `CufflessBP-XXXX`, password `cuffless-bp`, dashboard at
+`http://192.168.4.1`. Change that password with `HOTSPOT_PASS` in `wifi_secrets.h`.
+
+Add `?demo` to the address to see the dashboard with synthetic data. The page labels it
+clearly as demo data.
+
+### Recordings
+
+Each CSV has one row per ECG sample (200 Hz), with the four PPG columns filled every
+fourth row (50 Hz):
+
+```
+t_s,ecg,leads_off,ppg1_ch0,ppg2_ch1,ppg3_ch2,ppg4_ch3
+```
+
+Values are exactly what the board sends: the filtered ECG, and the filtered PPG infrared
+channel, not inverted. A PPG column is left empty when that sensor isn't detected.
+
+### Editing the page
+
+The page source is `firmware/cuffless_bp_monitor/dashboard/index.html`. After changing
+it, run `python embed.py` in that folder. This regenerates `dashboard_page.h`, the
+compressed copy that gets compiled into the firmware.
 
 ## Repository layout
 
@@ -173,6 +223,7 @@ hardware/              KiCad 9 project (ppg-ecg-carrier)
   fab/                 Gerbers + Excellon drill file
   docs/                renders, schematic, etch / assembly / drill PDFs, BOM
 firmware/              ESP32 Arduino sketch
+  cuffless_bp_monitor/dashboard/   Wi-Fi dashboard page
 docs/                  project report
 ```
 

@@ -12,3 +12,6 @@ hardware/net.net
 
 # third-party 3D models -- see README
 hardware/lib/3d/
+
+# local Wi-Fi credentials
+firmware/**/wifi_secrets.h

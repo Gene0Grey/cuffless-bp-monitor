@@ -1,0 +1,861 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<title>Live signals · Cuffless BP Monitor</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23ff2d55' d='M16 28.5S3.5 21 3.5 11.8A6.8 6.8 0 0 1 16 8.1a6.8 6.8 0 0 1 12.5 3.7C28.5 21 16 28.5 16 28.5z'/%3E%3C/svg%3E">
+<style>
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --bg: #f5f5f7;
+  --tile: #ffffff;
+  --text: #1d1d1f;
+  --text-2: #6e6e73;
+  --hair: rgba(0, 0, 0, .1);
+  --nav: rgba(251, 251, 253, .8);
+  --blue: #0071e3;
+  --blue-hover: #0077ed;
+  --link: #0066cc;
+  --focus: rgba(0, 125, 250, .6);
+  --ecg: #ff2d55;
+  --ppg: #5856d6;
+  --grid-1: rgba(255, 45, 85, .16);
+  --grid-2: rgba(255, 45, 85, .07);
+  --tick: rgba(0, 0, 0, .06);
+  --green: #34c759;
+  --orange: #ff9500;
+  --red: #ff3b30;
+  --gray: #aeaeb2;
+  --indigo: #5856d6;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --tile: #1c1c1e;
+    --text: #f5f5f7;
+    --text-2: #a1a1a6;
+    --hair: rgba(255, 255, 255, .14);
+    --nav: rgba(22, 22, 23, .8);
+    --link: #2997ff;
+    --ecg: #ff375f;
+    --ppg: #7d7aff;
+    --grid-1: rgba(255, 55, 95, .24);
+    --grid-2: rgba(255, 55, 95, .1);
+    --tick: rgba(255, 255, 255, .08);
+    --green: #30d158;
+    --orange: #ff9f0a;
+    --red: #ff453a;
+    --gray: #636366;
+    --indigo: #7d7aff;
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 17px/1.47059 var(--font);
+  letter-spacing: -.022em;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "kern";
+}
+.wrap { width: min(1180px, calc(100% - 44px)); margin-inline: auto; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* local nav: the product name on the left, its one action on the right */
+.localnav {
+  position: sticky; top: 0; z-index: 10;
+  height: 52px;
+  background: var(--nav);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--hair);
+}
+.nav-inner { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.brand { font-family: var(--font-display); font-size: 21px; line-height: 1.14; font-weight: 600; letter-spacing: .011em; color: inherit; text-decoration: none; white-space: nowrap; }
+.nav-right { display: flex; align-items: center; gap: 16px; font-size: 12px; line-height: 1.33; letter-spacing: -.01em; }
+.conn { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); white-space: nowrap; }
+.dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--gray); }
+.dot[data-tone="good"] { background: var(--green); }
+.dot[data-tone="warn"] { background: var(--orange); }
+.dot[data-tone="bad"] { background: var(--red); }
+.dot[data-tone="demo"] { background: var(--indigo); }
+
+.pill {
+  appearance: none; border: 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 30px; padding: 5px 14px;
+  border-radius: 980px;
+  background: var(--blue); color: #fff;
+  font: inherit; font-size: 12px; font-weight: 400; letter-spacing: -.01em;
+  font-variant-numeric: tabular-nums;
+  transition: background-color .2s ease-out, color .2s ease-out, opacity .2s ease-out;
+}
+.pill { position: relative; }
+.pill::after { content: ""; position: absolute; inset: -7px -4px; }
+.pill:hover { background: var(--blue-hover); }
+.pill:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--focus); }
+.pill:disabled { opacity: .42; cursor: default; }
+.pill:disabled:hover { background: var(--blue); }
+.pill .rec { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.pill.is-rec { background: var(--text); color: var(--bg); }
+.pill.is-rec .rec { background: var(--red); animation: rec 1.2s ease-in-out infinite alternate; }
+@keyframes rec { to { opacity: .3; } }
+
+/* ribbon: a one-line notice under the nav */
+.ribbon { background: var(--tile); border-bottom: 1px solid var(--hair); }
+.ribbon p { margin: 0; padding: 13px 22px; text-align: center; font-size: 14px; line-height: 1.42859; letter-spacing: -.016em; }
+.ribbon a, .ribbon button {
+  color: var(--link); background: none; border: 0; padding: 0; font: inherit; cursor: pointer;
+  text-decoration: none; white-space: nowrap; display: inline-flex; align-items: center; gap: 2px;
+}
+.ribbon a:hover, .ribbon button:hover { text-decoration: underline; }
+.ribbon :focus-visible { outline: none; border-radius: 4px; box-shadow: 0 0 0 3px var(--focus); }
+.chev { width: 9px; height: 9px; margin-top: 1px; }
+
+.intro { padding: 52px 0 28px; }
+h1 { margin: 0; font-family: var(--font-display); font-size: 48px; line-height: 1.08349; font-weight: 600; letter-spacing: -.003em; }
+.lede { margin: 10px 0 0; max-width: 46em; font-size: 21px; line-height: 1.381; letter-spacing: .011em; color: var(--text-2); }
+
+.summary { list-style: none; margin: 22px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.summary a {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 7px 15px 7px 13px;
+  border-radius: 980px; background: var(--tile); color: var(--text); text-decoration: none;
+  font-size: 14px; line-height: 1.29; letter-spacing: -.016em; white-space: nowrap;
+}
+.summary a:hover .name { text-decoration: underline; }
+.summary a:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--focus); }
+.summary .state { color: var(--text-2); }
+.summary .state:not(:empty)::before { content: "\00B7"; margin-right: 6px; }
+h2 { scroll-margin-top: 76px; }
+.tile { background: var(--tile); border-radius: 24px; padding: 24px 28px 22px; }
+.tile-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; margin-bottom: 14px; }
+.title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+h2 { margin: 0; font-family: var(--font-display); font-size: 24px; line-height: 1.16667; font-weight: 600; letter-spacing: .009em; }
+.meta { margin: 3px 0 0; font-size: 14px; line-height: 1.42859; letter-spacing: -.016em; color: var(--text-2); }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px 5px 9px; border-radius: 980px;
+  background: var(--bg); color: var(--text);
+  font-size: 12px; line-height: 1.33; letter-spacing: -.01em; white-space: nowrap;
+}
+
+.readout { display: grid; grid-template-columns: auto auto; align-items: baseline; column-gap: 5px; text-align: right; }
+.readout .label { grid-column: 1 / -1; display: inline-flex; align-items: center; justify-content: flex-end; gap: 5px; font-size: 12px; line-height: 1.33; color: var(--text-2); letter-spacing: -.01em; }
+.readout .num { font-family: ui-rounded, "SF Pro Rounded", var(--font-display); font-size: 44px; line-height: 1.05; font-weight: 600; letter-spacing: -.012em; font-variant-numeric: tabular-nums; }
+.readout .unit { font-size: 14px; font-weight: 600; color: var(--text-2); letter-spacing: .02em; }
+.heart { width: 13px; height: 13px; color: var(--ecg); }
+sup { font-size: .7em; line-height: 0; }
+sup a { color: inherit; text-decoration: none; }
+sup a:hover { text-decoration: underline; }
+
+.plot { position: relative; height: 248px; }
+.plot canvas { display: block; width: 100%; height: 100%; transition: opacity .25s ease-out; }
+.plot.is-stale canvas { opacity: .3; }
+.plot.is-muted canvas { opacity: .1; }
+.plot-msg {
+  position: absolute; inset: 0; margin: 0; padding: 0 24px;
+  display: grid; place-items: center; text-align: center;
+  font-size: 14px; line-height: 1.42859; color: var(--text-2); letter-spacing: -.016em;
+  pointer-events: none;
+}
+.plot-msg:empty { display: none; }
+/* the plate fades into the paper instead of punching a hole in it */
+.plot-msg .msg {
+  display: block; max-width: 30em; padding: 12px 18px; border-radius: 14px; text-wrap: balance;
+  background: color-mix(in srgb, var(--tile) 90%, transparent);
+  box-shadow: 0 0 24px 18px color-mix(in srgb, var(--tile) 90%, transparent);
+}
+.plot-msg strong { display: block; color: var(--text); font-weight: 600; font-size: 17px; letter-spacing: -.022em; margin-bottom: 2px; }
+.readout.is-empty .num { color: var(--text-2); }
+.readout.is-empty .unit { visibility: hidden; }
+.heart { transform-origin: 50% 60%; }
+.heart.beat { animation: beat .34s cubic-bezier(.2, .8, .2, 1); }
+@keyframes beat { 30% { transform: scale(1.3); } }
+.scale { margin: 8px 0 0; font-size: 12px; line-height: 1.33; color: var(--text-2); letter-spacing: -.01em; }
+
+.ppg-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 20px; }
+.ppg .readout .num { font-size: 32px; }
+.ppg .plot { height: 156px; }
+
+.foot { margin-top: 44px; padding: 20px 0 56px; border-top: 1px solid var(--hair); font-size: 12px; line-height: 1.33337; letter-spacing: -.01em; color: var(--text-2); }
+.foot ol { margin: 0 0 16px; padding-left: 1.3em; }
+.foot li { margin-bottom: 8px; max-width: 78ch; padding-left: 2px; }
+.foot p { margin: 0 0 6px; }
+.foot .device { margin-top: 14px; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 1068px) {
+  .readout .num { font-size: 40px; }
+}
+@media (max-width: 734px) {
+  .wrap { width: calc(100% - 32px); }
+  .brand { font-size: 17px; }
+  .nav-right { gap: 12px; }
+  .pill { min-height: 32px; }
+  .intro { padding: 32px 0 20px; }
+  h1 { font-size: 32px; line-height: 1.125; letter-spacing: .004em; }
+  .lede { font-size: 17px; line-height: 1.47; letter-spacing: -.022em; }
+  .tile { border-radius: 20px; padding: 18px 18px 16px; }
+  h2 { font-size: 21px; }
+  .readout .num { font-size: 34px; }
+  .ppg .readout .num { font-size: 28px; }
+  .plot { height: 200px; }
+  .ppg .plot { height: 136px; }
+  .ppg-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 14px; }
+  .summary { gap: 6px; margin-top: 18px; }
+  .summary a { min-height: 32px; padding: 6px 9px 6px 8px; gap: 5px; font-size: 13px; }
+  .summary .state:not(:empty)::before { margin-right: 4px; }
+}
+@media (max-width: 389px) {
+  .summary { gap: 5px; }
+  .summary a { padding: 6px 8px 6px 7px; font-size: 12px; }
+}
+@media (max-width: 374px) {
+  .brand { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pill.is-rec .rec, .heart.beat { animation: none; }
+  .plot canvas, .pill { transition: none; }
+}
+</style>
+</head>
+<body>
+<header class="localnav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="./">Cuffless BP Monitor</a>
+    <div class="nav-right">
+      <span class="conn" id="conn"><i class="dot" id="connDot"></i><span class="conn-text" id="connText">Connecting…</span></span>
+      <button class="pill" id="recBtn" type="button" disabled><i class="rec"></i><span id="recLabel">Record</span></button>
+    </div>
+  </div>
+</header>
+
+<div class="ribbon" id="ribbon" hidden><p id="ribbonText"></p></div>
+
+<main class="wrap" id="main">
+  <section class="intro">
+    <h1>Live signals.</h1>
+    <p class="lede" id="lede">ECG at 200&nbsp;Hz and four PPG sites at 50&nbsp;Hz, straight from the carrier board.</p>
+    <ul class="summary" id="summary" aria-label="Channel status"></ul>
+  </section>
+
+  <section class="tile ecg" aria-labelledby="ecgTitle">
+    <div class="tile-head">
+      <div>
+        <div class="title-row">
+          <h2 id="ecgTitle">ECG</h2>
+          <span class="chip" id="ecgChip"><i class="dot"></i><span>Waiting</span></span>
+        </div>
+        <p class="meta">AD8232 · RA, LA and RL electrodes</p>
+      </div>
+      <div class="readout" aria-live="off">
+        <span class="label">
+          <svg class="heart" viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 28.5S3.5 21 3.5 11.8A6.8 6.8 0 0 1 16 8.1a6.8 6.8 0 0 1 12.5 3.7C28.5 21 16 28.5 16 28.5z"/></svg>
+          Heart rate<sup><a href="#fn-hr" aria-label="Note 1">1</a></sup>
+        </span>
+        <span class="num" id="hr">--</span><span class="unit">BPM</span>
+      </div>
+    </div>
+    <div class="plot" id="ecgPlot">
+      <canvas id="ecgCanvas" role="img" aria-label="Live ECG trace, last 8 seconds"></canvas>
+      <p class="plot-msg" id="ecgMsg"></p>
+    </div>
+    <p class="scale">Last 8 seconds · grid 0.2&nbsp;s · auto-scaled</p>
+  </section>
+
+  <section class="ppg-grid" id="ppgGrid" aria-label="PPG sites"></section>
+</main>
+
+<footer class="wrap foot">
+    <ol>
+      <li id="fn-hr">Heart rate is computed in this browser from the ECG R-peaks, as the median of the last 8 beats.</li>
+      <li id="fn-ptt">Pulse transit time runs from each ECG R-peak to the foot of the pulse at that site (intersecting-tangent method), as the median of the last 8 beats. It includes sensor and filter delay, so compare sites and watch trends rather than reading absolute values. No blood-pressure value is shown until per-person calibration exists.</li>
+      <li id="fn-ir">PPG traces are the infrared channel, drawn inverted so each pulse rises. Recordings keep the values exactly as the board sends them.</li>
+    </ol>
+    <p>Not a medical device. For research and education only.</p>
+    <p>Cuffless BP Monitor · Sahil Krishna N</p>
+    <p class="device" id="device"></p>
+</footer>
+
+<p class="sr" id="announce" aria-live="polite"></p>
+
+<template id="ppgTile">
+  <section class="tile ppg">
+    <div class="tile-head">
+      <div>
+        <div class="title-row">
+          <h2></h2>
+          <span class="chip"><i class="dot"></i><span>Waiting</span></span>
+        </div>
+        <p class="meta"></p>
+      </div>
+      <div class="readout">
+        <span class="label">PTT<sup><a href="#fn-ptt" aria-label="Note 2">2</a></sup></span>
+        <span class="num">--</span><span class="unit">ms</span>
+      </div>
+    </div>
+    <div class="plot">
+      <canvas role="img"></canvas>
+      <p class="plot-msg"></p>
+    </div>
+  </section>
+</template>
+
+<script>
+'use strict';
+
+const ECG_HZ = 200, PPG_HZ = 50, WINDOW_S = 8;
+const ECG_CLAMP = 4000, PPG_CLAMP = 8000;
+const STALE_MS = 1500;
+// One fixed threshold on the IR baseline decides "no finger". Tune it
+// for your LED current and sites if a placed finger still reads as absent.
+const FINGER_DC_MIN = 20000;
+
+const SITES = [
+  { n: 1, ch: 0, site: 'Fingertip', ask: 'Place a fingertip on PPG 1.' },
+  { n: 2, ch: 1, site: 'Fingertip', ask: 'Place a fingertip on PPG 2.' },
+  { n: 3, ch: 2, site: 'Earlobe', ask: 'Put PPG 3 against an earlobe.' },
+  { n: 4, ch: 3, site: 'Earlobe', ask: 'Put PPG 4 against an earlobe.' },
+];
+
+const $ = (id) => document.getElementById(id);
+
+/* ---------- sample storage: fixed windows of value + sample index ---------- */
+class Ring {
+  constructor(n) { this.n = n; this.v = new Float32Array(n).fill(NaN); this.t = new Float64Array(n).fill(NaN); this.i = 0; }
+  push(t, v) { this.t[this.i] = t; this.v[this.i] = v; this.i = (this.i + 1) % this.n; }
+  clear() { this.v.fill(NaN); this.t.fill(NaN); }
+  val(k) { return this.v[(this.i + k) % this.n]; }   // k = 0 is the oldest
+  time(k) { return this.t[(this.i + k) % this.n]; }
+}
+
+const ecg = new Ring(ECG_HZ * WINDOW_S);
+const ppg = SITES.map(() => new Ring(PPG_HZ * WINDOW_S));
+
+const state = {
+  mode: 'connecting',        // connecting | live | stale | offline | demo
+  lastFrame: 0,
+  lastSeq: null,
+  latestT: 0,                // newest ECG sample index (200 Hz units)
+  leadsOff: false,
+  present: [false, false, false, false],
+  dc: [0, 0, 0, 0],
+  info: null,
+  dirty: true,
+};
+
+/* ---------- R-peak detection (slope energy, adaptive threshold) ---------- */
+const R = {
+  x: new Float32Array(64), xi: 0, xt: new Float64Array(64),
+  d1: 0, d2: 0,
+  win: new Float32Array(30), wi: 0, sum: 0,
+  peak: 0, prevY: 0, rising: false, lastR: -1e9,
+  rr: [], beats: [],
+  reset() { this.peak = 0; this.prevY = 0; this.rising = false; this.lastR = -1e9; this.rr = []; this.beats = []; this.sum = 0; this.win.fill(0); },
+};
+
+function detect(t, x) {
+  R.x[R.xi] = x; R.xt[R.xi] = t; R.xi = (R.xi + 1) & 63;
+  const d = x - R.d2; R.d2 = R.d1; R.d1 = x;
+  const e = d * d;
+  R.sum += e - R.win[R.wi]; R.win[R.wi] = e; R.wi = (R.wi + 1) % R.win.length;
+  const y = R.sum / R.win.length;
+  R.peak = Math.max(y, R.peak * 0.9995);
+  const th = 0.3 * R.peak;
+  if (y > th && y > R.prevY) R.rising = true;
+  else if (R.rising && y < R.prevY) {
+    R.rising = false;
+    if (R.prevY > th && t - R.lastR > 0.25 * ECG_HZ) {
+      // the energy peak trails the QRS: take the largest deflection just before it
+      let best = -1, bt = t;
+      for (let k = 0; k < 40; k++) {
+        const j = (R.xi - 1 - k + 64) & 63;
+        const a = Math.abs(R.x[j]);
+        if (a > best) { best = a; bt = R.xt[j]; }
+      }
+      onBeat(bt);
+    }
+  }
+  R.prevY = y;
+}
+
+function median(a) {
+  const s = [...a].sort((p, q) => p - q), m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+const heart = document.querySelector('.heart');
+function onBeat(t) {
+  heart.classList.remove('beat'); void heart.offsetWidth; heart.classList.add('beat');
+  const rr = (t - R.lastR) / ECG_HZ;
+  if (rr >= 0.3 && rr <= 2.0) { R.rr.push(rr); if (R.rr.length > 8) R.rr.shift(); }
+  R.lastR = t;
+  R.beats.push(t);
+}
+
+/* ---------- pulse transit time: R-peak to PPG foot, intersecting tangent ---------- */
+const ptt = SITES.map(() => []);
+
+function measurePtt() {
+  while (R.beats.length && R.beats[0] + 0.75 * ECG_HZ <= state.latestT) {
+    const tR = R.beats.shift();
+    SITES.forEach((s, i) => {
+      if (channelState(i) !== 'good') return;
+      const v = footDelay(ppg[i], tR);
+      if (v !== null) { ptt[i].push(v); if (ptt[i].length > 8) ptt[i].shift(); }
+    });
+  }
+}
+
+function footDelay(ring, tR) {
+  const T = [], V = [];
+  for (let k = 0; k < ring.n; k++) {
+    const t = ring.time(k);
+    if (t >= tR + 0.04 * ECG_HZ && t <= tR + 0.7 * ECG_HZ) { T.push(t); V.push(-ring.val(k)); }
+  }
+  if (T.length < 8 || V.some(Number.isNaN)) return null;
+  let iMax = -1, sMax = 0;
+  for (let i = 1; i < T.length - 1; i++) {
+    const s = (V[i + 1] - V[i - 1]) / (T[i + 1] - T[i - 1]);
+    if (s > sMax) { sMax = s; iMax = i; }
+  }
+  if (iMax < 1) return null;
+  let vMin = Infinity;
+  for (let i = 0; i <= iMax; i++) vMin = Math.min(vMin, V[i]);
+  const foot = T[iMax] - (V[iMax] - vMin) / sMax;
+  if (!(foot > tR && foot <= T[iMax])) return null;
+  return (foot - tR) / ECG_HZ * 1000;
+}
+
+/* ---------- incoming frames ---------- */
+// d: {s: index of the last ECG sample, lo: leads off, m: sensor bitmask,
+//     e: 8 ECG samples, p: [[4 PPG at s-4], [4 PPG at s]], dc: 4 IR baselines}
+function onFrame(f) {
+  if (!f || !Array.isArray(f.e) || !Array.isArray(f.p)) return;
+  const n = f.e.length;
+  if (state.lastSeq !== null) {
+    const gap = f.s - n - state.lastSeq;
+    if (gap < 0 || gap > ECG_HZ * WINDOW_S) { ecg.clear(); ppg.forEach((r) => r.clear()); R.reset(); }
+    else if (gap > 0) { ecg.push(state.lastSeq + gap, NaN); ppg.forEach((r) => r.push(state.lastSeq + gap, NaN)); }
+  }
+  state.lastSeq = f.s;
+  if (f.lo && !state.leadsOff) ecg.clear();
+  state.leadsOff = !!f.lo;
+  const present = SITES.map((s) => !!(f.m >> s.ch & 1));
+  present.forEach((on, i) => { if (!on && state.present[i]) ppg[i].clear(); });
+  state.present = present;
+  if (Array.isArray(f.dc)) state.dc = f.dc;
+
+  for (let k = 0; k < n; k++) {
+    const t = f.s - (n - 1) + k;
+    const x = state.leadsOff ? NaN : f.e[k];
+    ecg.push(t, x);
+    if (!state.leadsOff) detect(t, x);
+  }
+  if (state.leadsOff) R.reset();
+  f.p.forEach((row, j) => {
+    const t = f.s - (f.p.length - 1 - j) * (ECG_HZ / PPG_HZ);
+    SITES.forEach((s, i) => ppg[i].push(t, state.present[i] ? row[s.ch] : NaN));
+  });
+  state.latestT = f.s;
+  state.lastFrame = performance.now();
+  measurePtt();
+  if (rec.on) rec.frames.push(f);
+  if (state.mode === 'connecting' || state.mode === 'stale') {
+    setMode(demo.on ? 'demo' : 'live');
+    if (state.unreachable) { state.unreachable = false; ribbon(''); }
+  }
+  state.dirty = true;
+}
+
+/* ---------- status ---------- */
+function recentPeak(ring, seconds) {
+  let m = 0;
+  const from = ring.n - seconds * (ring.n / WINDOW_S);
+  for (let k = Math.max(0, from); k < ring.n; k++) { const v = Math.abs(ring.val(k)); if (v > m) m = v; }
+  return m;
+}
+
+function channelState(i) {
+  if (state.mode === 'connecting' || state.mode === 'offline') return 'waiting';
+  if (!state.present[i]) return 'absent';
+  if (state.dc[i] < FINGER_DC_MIN) return 'nofinger';
+  if (recentPeak(ppg[i], 2) >= PPG_CLAMP * 0.98) return 'clip';
+  return 'good';
+}
+
+function ecgState() {
+  if (state.mode === 'connecting' || state.mode === 'offline') return 'waiting';
+  if (state.leadsOff) return 'leadsoff';
+  if (recentPeak(ecg, 2) >= ECG_CLAMP * 0.98) return 'clip';
+  return 'good';
+}
+
+const ECG_STATES = {
+  waiting: ['', 'Waiting'],
+  good: ['good', 'Leads on'],
+  leadsoff: ['bad', 'Leads off'],
+  clip: ['warn', 'Clipping'],
+};
+const PPG_STATES = {
+  waiting: ['', 'Waiting'],
+  good: ['good', 'Good signal'],
+  absent: ['', 'No sensor'],
+  nofinger: ['warn', 'No contact'],
+  clip: ['warn', 'Clipping'],
+};
+
+function setChip(chip, [tone, text]) {
+  const dot = chip.querySelector('.dot'), label = chip.querySelector('span');
+  if (label.textContent === text) return false;
+  dot.dataset.tone = tone; label.textContent = text;
+  return true;
+}
+
+function setMsg(el, title, body) {
+  const html = title ? `<span class="msg"><strong>${title}</strong>${body || ''}</span>` : '';
+  if (el.innerHTML !== html) el.innerHTML = html;
+  el.parentElement.classList.toggle('is-muted', !!title);
+}
+
+function setNum(el, value) {
+  const empty = value === null, text = empty ? '–' : String(value);
+  if (el.textContent === text) return;
+  el.textContent = text;
+  el.parentElement.classList.toggle('is-empty', empty);
+}
+
+const tiles = [], summary = [];
+function summaryItem(name, href) {
+  const li = document.createElement('li');
+  li.innerHTML = `<a href="${href}"><i class="dot"></i><span class="name">${name}</span><span class="state"></span></a>`;
+  $('summary').append(li);
+  summary.push({ dot: li.querySelector('.dot'), state: li.querySelector('.state'), key: '' });
+}
+function setSummary(i, key, [tone, text]) {
+  const it = summary[i];
+  if (it.key === key) return;
+  it.key = key; it.dot.dataset.tone = tone;
+  it.state.textContent = key === 'good' || key === 'waiting' ? '' : text;
+}
+
+function buildTiles() {
+  summaryItem('ECG', '#ecgTitle');
+  const tpl = $('ppgTile');
+  SITES.forEach((s) => {
+    const node = tpl.content.firstElementChild.cloneNode(true);
+    const id = `ppg${s.n}Title`;
+    node.setAttribute('aria-labelledby', id);
+    node.querySelector('h2').id = id;
+    node.querySelector('h2').textContent = `PPG ${s.n}`;
+    node.querySelector('.meta').textContent = `${s.site} · MAX30102 on CH${s.ch}`;
+    const canvas = node.querySelector('canvas');
+    canvas.setAttribute('aria-label', `Live PPG trace from PPG ${s.n}, ${s.site.toLowerCase()}, last 8 seconds`);
+    $('ppgGrid').append(node);
+    summaryItem(`PPG ${s.n}`, `#${id}`);
+    tiles.push({
+      chip: node.querySelector('.chip'), num: node.querySelector('.num'),
+      plot: node.querySelector('.plot'), msg: node.querySelector('.plot-msg'), canvas,
+    });
+  });
+}
+
+function announce(text) { $('announce').textContent = text; }
+
+function updateStatus() {
+  const es = ecgState();
+  if (setChip($('ecgChip'), ECG_STATES[es]) && es !== 'waiting') announce(`ECG: ${ECG_STATES[es][1]}`);
+  setSummary(0, es, ECG_STATES[es]);
+  if (es === 'leadsoff') setMsg($('ecgMsg'), 'Leads off', 'Check that the RA, LA and RL electrodes are on the skin.');
+  else if (es === 'waiting' && state.mode === 'offline') setMsg($('ecgMsg'), 'No device', 'Check the board is powered and on the same network as this screen.');
+  else if (es === 'waiting') setMsg($('ecgMsg'), 'Waiting for the device', '');
+  else setMsg($('ecgMsg'), '', '');
+
+  const hrOk = es === 'good' && R.rr.length >= 3 && performance.now() - state.lastFrame < STALE_MS;
+  setNum($('hr'), hrOk ? Math.round(60 / median(R.rr)) : null);
+
+  tiles.forEach((tile, i) => {
+    const cs = channelState(i), s = SITES[i];
+    if (setChip(tile.chip, PPG_STATES[cs]) && cs !== 'waiting') announce(`PPG ${s.n}: ${PPG_STATES[cs][1]}`);
+    setSummary(i + 1, cs, PPG_STATES[cs]);
+    if (cs === 'absent') setMsg(tile.msg, `No sensor on CH${s.ch}`, 'Seat the module, set its I²C jumper to 3V3, then reset the board.');
+    else if (cs === 'nofinger') setMsg(tile.msg, 'No contact', s.ask);
+    else if (cs === 'waiting') setMsg(tile.msg, '', '');
+    else setMsg(tile.msg, '', '');
+    if (cs !== 'good') ptt[i].length = 0;
+    setNum(tile.num, ptt[i].length >= 3 ? Math.round(median(ptt[i])) : null);
+  });
+}
+
+/* ---------- drawing ---------- */
+let colors = {};
+function readColors() {
+  const c = getComputedStyle(document.documentElement);
+  colors = { ecg: c.getPropertyValue('--ecg').trim(), ppg: c.getPropertyValue('--ppg').trim(),
+    g1: c.getPropertyValue('--grid-1').trim(), g2: c.getPropertyValue('--grid-2').trim(), tick: c.getPropertyValue('--tick').trim() };
+}
+readColors();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readColors(); state.dirty = true; });
+
+const scales = new Map();
+function fit(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  return dpr;
+}
+
+function drawGrid(ctx, w, h, pxPerS, dpr, ecgPaper) {
+  const latest = state.latestT / ECG_HZ;
+  ctx.lineWidth = Math.max(1, Math.floor(dpr));
+  const vline = (t, c) => {
+    const x = Math.round(w - (latest - t) * pxPerS) + 0.5;
+    ctx.strokeStyle = c; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+  };
+  const hline = (y, c) => {
+    ctx.strokeStyle = c; ctx.beginPath(); ctx.moveTo(0, Math.round(y) + 0.5); ctx.lineTo(w, Math.round(y) + 0.5); ctx.stroke();
+  };
+  if (!ecgPaper) {
+    for (let t = Math.ceil(latest - WINDOW_S); t <= latest; t++) vline(t, colors.tick);
+    return;
+  }
+  // ECG paper: 0.04 s small squares inside 0.2 s large ones. The small grid drops
+  // out on narrow screens, where it would close up below 4 px.
+  const gap = 0.04 * pxPerS, minor = gap >= 4 * dpr;
+  const k0 = Math.ceil((latest - WINDOW_S) / 0.04), k1 = Math.floor(latest / 0.04);
+  for (let k = k0; k <= k1; k++) {
+    const major = k % 5 === 0;
+    if (major || minor) vline(k * 0.04, major ? colors.g1 : colors.g2);
+  }
+  for (let i = 0; h / 2 - i * gap >= 0; i++) {
+    const major = i % 5 === 0;
+    if (!major && !minor) continue;
+    for (const y of i ? [h / 2 - i * gap, h / 2 + i * gap] : [h / 2]) hline(y, major ? colors.g1 : colors.g2);
+  }
+}
+
+function drawTrace(canvas, ring, color, invert, ecgPaper, minSpan) {
+  const dpr = fit(canvas);
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  drawGrid(ctx, w, h, w / WINDOW_S, dpr, ecgPaper);
+
+  let lo = Infinity, hi = -Infinity;
+  for (let k = 0; k < ring.n; k++) {
+    const v = ring.val(k);
+    if (v === v) { const y = invert ? -v : v; if (y < lo) lo = y; if (y > hi) hi = y; }
+  }
+  if (lo === Infinity) return;
+  const mid = (lo + hi) / 2, span = Math.max(hi - lo, minSpan) * 1.18;
+  let sc = scales.get(canvas);
+  if (!sc) { sc = { mid, span }; scales.set(canvas, sc); }
+  sc.mid += (mid - sc.mid) * 0.15;
+  sc.span += (span - sc.span) * 0.15;
+
+  const latest = state.latestT, x0 = latest - (WINDOW_S * ECG_HZ - 1);
+  const pad = 10 * dpr, hh = h - pad * 2;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.75 * dpr;
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.beginPath();
+  let pen = false;
+  for (let k = 0; k < ring.n; k++) {
+    const v = ring.val(k), t = ring.time(k);
+    if (v !== v || t !== t || t < x0) { pen = false; continue; }
+    const x = (t - x0) / (WINDOW_S * ECG_HZ - 1) * w;
+    const y = pad + hh * (0.5 - ((invert ? -v : v) - sc.mid) / sc.span);
+    if (pen) ctx.lineTo(x, y); else { ctx.moveTo(x, y); pen = true; }
+  }
+  ctx.stroke();
+}
+
+function frame() {
+  const stale = (state.mode === 'live' || state.mode === 'demo') && performance.now() - state.lastFrame > STALE_MS;
+  if (stale && state.mode !== 'stale') setMode('stale');
+  if (state.dirty) {
+    state.dirty = false;
+    drawTrace($('ecgCanvas'), ecg, colors.ecg, false, true, 120);
+    tiles.forEach((tile, i) => drawTrace(tile.canvas, ppg[i], colors.ppg, true, false, 80));
+    updateStatus();
+  }
+  requestAnimationFrame(frame);
+}
+new ResizeObserver(() => { state.dirty = true; }).observe($('main'));
+
+/* ---------- connection ---------- */
+const MODES = {
+  connecting: ['', 'Connecting…'],
+  live: ['good', 'Live'],
+  stale: ['warn', 'Reconnecting…'],
+  offline: ['', 'Offline'],
+  demo: ['demo', 'Demo'],
+};
+function setMode(mode) {
+  state.mode = mode;
+  const [tone, text] = MODES[mode];
+  $('connDot').dataset.tone = tone;
+  $('connText').textContent = text;
+  $('conn').title = text;
+  document.querySelectorAll('.plot').forEach((p) => p.classList.toggle('is-stale', mode === 'stale'));
+  $('recBtn').disabled = !(mode === 'live' || mode === 'demo' || rec.on);
+  if (mode === 'stale') announce('Connection lost. Reconnecting.');
+  state.dirty = true;
+}
+
+function ribbon(html) {
+  $('ribbon').hidden = !html;
+  $('ribbonText').innerHTML = html || '';
+}
+
+const CHEVRON = '<svg class="chev" viewBox="0 0 9 9" aria-hidden="true"><path d="M2.5 1 6 4.5 2.5 8" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function onInfo(i) {
+  state.info = i;
+  const where = i.ip ? ` from ${i.ip}` : '';
+  $('lede').textContent = `ECG at 200 Hz and four PPG sites at 50 Hz, streaming${where}.`;
+  renderDevice();
+}
+
+function renderDevice() {
+  const i = state.info;
+  if (demo.on) { $('device').textContent = 'Demo data generated in this browser.'; return; }
+  if (!i) { $('device').textContent = ''; return; }
+  const net = i.net === 'hotspot' ? `its own hotspot “${i.ssid}”` : `Wi-Fi “${i.ssid}”`;
+  const up = Math.floor((i.up + (performance.now() - i.at)) / 1000);
+  const hms = `${Math.floor(up / 3600)}:${String(Math.floor(up / 60) % 60).padStart(2, '0')}:${String(up % 60).padStart(2, '0')}`;
+  $('device').textContent = `Device ${i.ip}${i.host ? ` (${i.host})` : ''} on ${net} · up ${hms}`;
+}
+setInterval(renderDevice, 1000);
+
+let source = null;
+function connect() {
+  setMode('connecting');
+  source = new EventSource('events');
+  source.addEventListener('open', () => { if (state.mode === 'offline') setMode('connecting'); });
+  source.addEventListener('i', (e) => { try { const i = JSON.parse(e.data); i.at = performance.now(); onInfo(i); } catch (_) {} });
+  source.addEventListener('d', (e) => { try { onFrame(JSON.parse(e.data)); } catch (_) {} });
+  source.addEventListener('error', () => {
+    if (source.readyState === EventSource.CLOSED) {
+      setMode('offline');
+      state.unreachable = true;
+      ribbon(`Can’t reach the board. Retrying every few seconds. <a href="?demo">View demo data ${CHEVRON}</a>`);
+      setTimeout(connect, 3000);
+    }
+    else if (state.mode === 'live') setMode('stale');
+  });
+}
+
+/* ---------- recording ---------- */
+const rec = { on: false, frames: [], start: 0, timer: 0 };
+
+function fmtClock(ms) {
+  const s = Math.floor(ms / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function toggleRecord() {
+  if (!rec.on) {
+    rec.on = true; rec.frames = []; rec.start = Date.now();
+    $('recBtn').classList.add('is-rec');
+    $('recBtn').setAttribute('aria-label', 'Stop recording and save CSV');
+    $('recLabel').textContent = 'Stop · 0:00';
+    rec.timer = setInterval(() => { $('recLabel').textContent = `Stop · ${fmtClock(Date.now() - rec.start)}`; }, 250);
+    announce('Recording started.');
+    return;
+  }
+  rec.on = false;
+  clearInterval(rec.timer);
+  $('recBtn').classList.remove('is-rec');
+  $('recBtn').removeAttribute('aria-label');
+  $('recLabel').textContent = 'Record';
+  setMode(state.mode);
+  saveCsv(rec.frames);
+}
+
+function saveCsv(frames) {
+  if (!frames.length) { ribbon('Nothing was recorded: no data arrived while recording.'); return; }
+  const lines = ['t_s,ecg,leads_off,ppg1_ch0,ppg2_ch1,ppg3_ch2,ppg4_ch3'];
+  const t0 = frames[0].s - (frames[0].e.length - 1);
+  let rows = 0;
+  for (const f of frames) {
+    const n = f.e.length, step = ECG_HZ / PPG_HZ;
+    for (let k = 0; k < n; k++) {
+      const t = f.s - (n - 1) + k;
+      const j = f.p.length - 1 - (n - 1 - k) / step;
+      const row = Number.isInteger(j) && j >= 0 ? f.p[j] : null;
+      const p = SITES.map((s) => (row && (f.m >> s.ch & 1) ? row[s.ch] : ''));
+      lines.push([((t - t0) / ECG_HZ).toFixed(3), f.e[k], f.lo ? 1 : 0, ...p].join(','));
+      rows++;
+    }
+  }
+  const d = new Date(rec.start), pad = (v) => String(v).padStart(2, '0');
+  const name = `cuffless-bp-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}${demo.on ? '-demo' : ''}.csv`;
+  const url = URL.createObjectURL(new Blob([lines.join('\n') + '\n'], { type: 'text/csv' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: name });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  ribbon(`Saved ${name}: ${(rows / ECG_HZ).toFixed(1)} s, ${rows.toLocaleString()} ECG samples. <button type="button" id="ribbonClose">Dismiss</button>`);
+  $('ribbonClose').addEventListener('click', () => ribbon(demo.on ? DEMO_RIBBON : ''));
+  announce(`Saved ${name}.`);
+}
+
+/* ---------- demo data (synthetic, clearly labelled) ---------- */
+const demo = { on: false };
+const DEMO_RIBBON = `You are looking at synthetic demo data, not a sensor. <a href="./">Connect to the device ${CHEVRON}</a>`;
+
+function startDemo() {
+  demo.on = true;
+  setMode('demo');
+  ribbon(DEMO_RIBBON);
+  $('lede').innerHTML = 'ECG at 200&nbsp;Hz and four PPG sites at 50&nbsp;Hz, from a synthetic demo signal.';
+  renderDevice();
+  const g = (t, mu, sd) => Math.exp(-((t - mu) ** 2) / (2 * sd * sd));
+  const delays = [0.27, 0.28, 0.21, 0.22];
+  let s = 0, nextBeat = 0.3, beats = [];
+  let rand = 7;
+  const noise = () => { rand = (rand * 16807) % 2147483647; return rand / 2147483647 - 0.5; };
+  const ecgAt = (t) => beats.reduce((acc, b) => {
+    const u = t - b;
+    return acc + 0.12 * g(u, -0.2, 0.025) - 0.1 * g(u, -0.03, 0.01) + g(u, 0, 0.011) - 0.25 * g(u, 0.03, 0.012) + 0.3 * g(u, 0.26, 0.05);
+  }, 0);
+  const ppgAt = (t, d) => beats.reduce((acc, b) => {
+    const u = t - b - d;
+    return acc + (u < -0.05 ? 0 : g(u, 0.14, 0.06) + 0.32 * g(u, 0.4, 0.07));
+  }, 0);
+  setInterval(() => {
+    const e = [], p = [];
+    for (let k = 0; k < 8; k++) {
+      s++;
+      const t = s / ECG_HZ;
+      while (t + 1 > nextBeat) { beats.push(nextBeat); nextBeat += 60 / (68 + 3 * Math.sin(nextBeat / 6)); }
+      beats = beats.filter((b) => b > t - 2);
+      e.push(Math.round(1150 * ecgAt(t) + 18 * noise()));
+      if (s % 4 === 0) p.push(delays.map((d, i) => Math.round(-(1500 - i * 140) * ppgAt(t, d) + 12 * noise())));
+    }
+    onFrame({ s, lo: 0, m: 15, e, p, dc: [118000, 121000, 96000, 99000] });
+  }, 40);
+}
+
+function startOffline() {
+  setMode('offline');
+  ribbon(`This page runs on the ESP32. Open it from the address the board prints on start-up, or <a href="?demo">view demo data ${CHEVRON}</a>`);
+}
+
+/* ---------- start ---------- */
+buildTiles();
+$('recBtn').addEventListener('click', toggleRecord);
+if (new URLSearchParams(location.search).has('demo')) startDemo();
+else if (location.protocol === 'file:') startOffline();
+else connect();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

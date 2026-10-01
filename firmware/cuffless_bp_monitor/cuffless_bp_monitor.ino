@@ -1,4 +1,5 @@
 #include <Wire.h>
+#include "web.h"          // Wi-Fi + live dashboard
 #define TCA_ADDR    0x70
 #define MAX_ADDR    0x57
 #define NUM_SENSORS 4
@@ -122,6 +123,7 @@ void setup(){
     present[ch]=initSensor(ch);
     Serial.printf("PPG ch%d: %s\n", ch, present[ch]?"OK":"not found");
   }
+  webBegin();
   lastLoop = micros();
 }
 
@@ -129,6 +131,7 @@ void loop(){
   if((uint32_t)(micros() - lastLoop) < LOOP_US) return;
   lastLoop += LOOP_US;
   float ecg = readECG();                 // 200 Hz
+  webAddEcg(ecg);
   if(++loopCount % PRINT_DIV == 0){      // 50 Hz output
     for(uint8_t ch=0; ch<NUM_SENSORS; ch++) if(present[ch]) updatePPG(ch);
     Serial.print(ecg);
@@ -137,5 +140,7 @@ void loop(){
       Serial.print('\t'); Serial.print(ppgOut[ch]);
     }
     Serial.println();
+    webAddPpg(ppgOut, present, ppgBase,
+              digitalRead(LO_PLUS)==HIGH || digitalRead(LO_MINUS)==HIGH);
   }
 }
